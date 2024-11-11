@@ -1,9 +1,8 @@
 public class IscTorrent {
 
-    public static void main(String[] args) {
-        GUI gui = new GUI();
-        DownloadTasksManager downloadTasksManager = new DownloadTasksManager();
+    public static final int CHUNK_SIZE = 1024;
 
-        gui.initialize(downloadTasksManager);
+    public static void main(String[] args) {
+        GUI gui = new GUI();;
     }
 }

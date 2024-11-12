@@ -18,8 +18,8 @@ public class FileSearchResult {
         this.porta = porta;
     }
 
-    public List<File> search() {
-        List<File> files = new ArrayList<File>();
-
-    }
+//    public List<File> search() {
+//        List<File> files = new ArrayList<File>();
+//
+//    }
 }

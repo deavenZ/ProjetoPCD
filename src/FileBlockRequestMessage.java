@@ -1,4 +1,5 @@
-public class FileBlockRequestMessage {
+public class FileBlockRequestMessage extends Thread {
+
 
 
 }

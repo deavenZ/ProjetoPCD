@@ -41,9 +41,9 @@ public class Node {
         }
     }
 
-    public List<File> getFilteredFiles(WordSearchMessage filter) {
-
-    }
+//    public List<File> getFilteredFiles(WordSearchMessage filter) {
+//
+//    }
 
     public List<File> getFileList() {
         return fileList;

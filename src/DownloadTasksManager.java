@@ -11,4 +11,8 @@ public class DownloadTasksManager {
     public DownloadTasksManager() {
         chunkList = new ArrayList<FileBlockRequestMessage>();
     }
+
+    public void downloadFile(File file) {
+
+    }
 }

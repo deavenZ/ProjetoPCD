@@ -57,10 +57,12 @@ public class GUI {
     }
 
     private void connectNode() {
+        // Window Configuration
         JFrame frame = new JFrame("Connect");
         frame.setPreferredSize(new Dimension(400, 90));
         frame.setLayout(new BorderLayout());
 
+        // TextFields Configuration
         JPanel panel = new JPanel();
         frame.add(panel, BorderLayout.CENTER);
         panel.setLayout(new GridLayout(1, 4));
@@ -71,6 +73,7 @@ public class GUI {
         JTextField porta = new JTextField();
         panel.add(porta);
 
+        // Buttons Configuration
         JPanel buttonPanel = new JPanel();
         frame.add(buttonPanel, BorderLayout.SOUTH);
         buttonPanel.setLayout(new GridLayout(1, 2));
@@ -83,6 +86,8 @@ public class GUI {
         });
         JButton connectButton = new JButton("Connect");
         buttonPanel.add(connectButton);
+
+        // Final Configuration
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);

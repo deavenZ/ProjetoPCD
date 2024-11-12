@@ -5,16 +5,18 @@ import java.awt.event.ActionListener;
 
 public class GUI {
 
+    private Node node;
     private DownloadTasksManager downloadTasksManager;
 
-    public void initialize(DownloadTasksManager downloadTasksManager) {
+    public GUI(String endereco, String porta, Network network, DownloadTasksManager downloadTasksManager) {
+        node = new Node(endereco, porta, network);
         this.downloadTasksManager = downloadTasksManager;
         setup();
     }
 
     public void setup() {
         // Setup Inicial da GUI
-        JFrame frame = new JFrame("IscTorrent");
+        JFrame frame = new JFrame("IscTorrent - IP: " + node.getEndereco() + " Porta: " + node.getPorta());
         frame.setPreferredSize(new Dimension(1000, 300));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -27,6 +29,11 @@ public class GUI {
         JTextField textoAProcurar = new JTextField();
         panel.add(textoAProcurar);
         JButton searchButton = new JButton("Procurar");
+        searchButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
         panel.add(searchButton);
 
         // List of Torrents
@@ -78,13 +85,18 @@ public class GUI {
         frame.add(buttonPanel, BorderLayout.SOUTH);
         buttonPanel.setLayout(new GridLayout(1, 2));
         JButton cancelButton = new JButton("Cancel");
-        buttonPanel.add(cancelButton);
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
             }
         });
+        buttonPanel.add(cancelButton);
         JButton connectButton = new JButton("Connect");
+        connectButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                node.connectNode(endereco.getText(), porta.getText());
+            }
+        });
         buttonPanel.add(connectButton);
 
         // Final Configuration

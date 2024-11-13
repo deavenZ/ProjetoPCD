@@ -6,16 +6,14 @@ public class Node {
 
     private String endereco;
     private String porta;
-    private List<File> fileList = new ArrayList<File>();;
-    private List<Node> connectedNodes = new ArrayList<Node>();;
+    private List<File> fileList = new ArrayList<>();
+    private List<Node> connectedNodes = new ArrayList<>();
     private DownloadTasksManager downloadManager;
-    private Network network;
 
     // Main Node
     public Node(String endereco, String porta, Network network) {
         this.endereco = endereco;
         this.porta = porta;
-        this.network = network;
         network.addNode(this);
     }
 
@@ -23,7 +21,6 @@ public class Node {
     public Node(String endereco, String porta, String folderName, Network network) {
         this.endereco = endereco;
         this.porta = porta;
-        this.network = network;
         createFileList(folderName);
         network.addNode(this);
     }
@@ -31,13 +28,6 @@ public class Node {
     public void connectNode(String endereco, String porta) {
         if(getEndereco().equals(endereco) && getPorta().equals(porta)) {
             throw new IllegalArgumentException("Não te podes ligar a ti mesmo!!");
-        }
-        Node receiver = network.searchInNetwork(endereco, porta);
-        if(receiver == null) {
-            throw new IllegalArgumentException("Não foi possivel encontrar este Nó!!");
-        } else {
-            addConectedNode(receiver);
-            receiver.addConectedNode(this);
         }
     }
 

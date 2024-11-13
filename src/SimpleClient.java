@@ -1,27 +1,23 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 
 
 public class SimpleClient {
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     private Socket socket;
-    public static void main(String[] args) {
-        new SimpleClient().runClient();
+
+    public SimpleClient() {
+        runClient();
     }
 
     public void runClient() {
         try {
             connectToServer();
             sendMessages();
-        } catch (IOException e) {// ERRO...
-        } finally {//a fechar...
+        } catch (IOException e) {
+        } finally {
             try {
                 socket.close();
             } catch (IOException e) {//...
@@ -34,16 +30,12 @@ public class SimpleClient {
         System.out.println("Endereco:" + endereco);
         socket = new Socket(endereco, SimpleServer.PORTO);
         System.out.println("Socket:" + socket);
-        in = new BufferedReader(new InputStreamReader(
-                socket.getInputStream()));
-        out = new PrintWriter(new BufferedWriter(
-                new OutputStreamWriter(socket.getOutputStream())),
-                true);
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
     }
 
     void sendMessages() throws IOException {
         for (int i = 0; i < 10; i++) {
-            out.println("Ola " + i);
             String str = in.readLine();
             System.out.println(str);
             try {
@@ -51,7 +43,6 @@ public class SimpleClient {
             } catch (InterruptedException e) {//...
             }
         }
-        out.println("FIM");
     }
 
 }

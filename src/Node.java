@@ -1,32 +1,36 @@
 import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
 
-    private String endereco;
-    private String porta;
+    private int porta;
     private List<File> fileList = new ArrayList<>();
     private List<Node> connectedNodes = new ArrayList<>();
     private DownloadTasksManager downloadManager;
+    public SimpleClient cliente;
+    public SimpleServer servidor;
 
-    // Main Node
-    public Node(String endereco, String porta, Network network) {
-        this.endereco = endereco;
-        this.porta = porta;
-        network.addNode(this);
-    }
 
-    // Neighbor Nodes
-    public Node(String endereco, String porta, String folderName, Network network) {
-        this.endereco = endereco;
+    public Node(int porta, String folderName) {
         this.porta = porta;
         createFileList(folderName);
-        network.addNode(this);
+
+        this.cliente = new SimpleClient(porta);
+        this.servidor = new SimpleServer();
+        new Thread(() -> {
+            try {
+                servidor.startServing();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
-    public void connectNode(String endereco, String porta) {
-        if(getEndereco().equals(endereco) && getPorta().equals(porta)) {
+    public void connectNode(/*String addr,*/int porta) {
+        if (getPorta() == porta) {
             throw new IllegalArgumentException("Não te podes ligar a ti mesmo!!");
         }
     }
@@ -43,11 +47,7 @@ public class Node {
         return connectedNodes;
     }
 
-    public String getEndereco() {
-        return endereco;
-    }
-
-    public String getPorta() {
+    public int getPorta() {
         return porta;
     }
 
@@ -57,14 +57,16 @@ public class Node {
 
     public void addConectedNode(Node node) {
         connectedNodes.add(node);
-        System.out.println(this.getEndereco() + " is now conected to " + node.getEndereco());
+        //System.out.println(this.getEndereco() + " is now conected to " + node.getEndereco());
     }
 
     private void createFileList(String folderName) {
         File[] files = new File(folderName).listFiles();
         if (files != null) {
             for (File file : files) {
-                addFile(file);
+                if (file != null && file.getName().endsWith("mp3")) {
+                    addFile(file);
+                }
             }
         }
     }

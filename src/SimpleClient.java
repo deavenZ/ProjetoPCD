@@ -4,17 +4,17 @@ import java.net.Socket;
 
 
 public class SimpleClient {
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
+    private BufferedReader in;
+    private PrintWriter out;
     private Socket socket;
 
-    public SimpleClient() {
-        runClient();
+    public SimpleClient(int PORTO) {
+        runClient(PORTO);
     }
 
-    public void runClient() {
+    public void runClient(int PORTO) {
         try {
-            connectToServer();
+            connectToServer(PORTO);
             sendMessages();
         } catch (IOException e) {
         } finally {
@@ -25,23 +25,26 @@ public class SimpleClient {
         }
     }
 
-    void connectToServer() throws IOException {
-        InetAddress endereco = InetAddress.getByName(null);
-        System.out.println("Endereco:" + endereco);
-        socket = new Socket(endereco, SimpleServer.PORTO);
-        System.out.println("Socket:" + socket);
-        in = new ObjectInputStream(socket.getInputStream());
-        out = new ObjectOutputStream(socket.getOutputStream());
+    void connectToServer(int PORTO) throws IOException {
+        InetAddress addr = InetAddress.getByName(null);
+        System.out.println("Endereço: " + addr);
+        socket = new Socket(addr, PORTO);
+        System.out.println("Socket: " + socket);
+        in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
+        out = new PrintWriter(new BufferedWriter(new OutputStreamWriter((socket.getOutputStream()))), true);
     }
+
 
     void sendMessages() throws IOException {
         for (int i = 0; i < 10; i++) {
+            out.println("Ola " + i);
             String str = in.readLine();
-            System.out.println(str);
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {//...
-            }
+            out.println(str);
+        }
+        out.println("FIM");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {//...
         }
     }
 

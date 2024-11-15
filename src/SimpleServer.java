@@ -7,8 +7,9 @@ public class SimpleServer {
 
     public class DealWithClient extends Thread {
 
-        private ObjectOutputStream out;
-        private ObjectInputStream in;
+        private BufferedReader in;
+        private PrintWriter out;
+
 
         public DealWithClient(Socket socket) throws IOException {
             doConnections(socket);
@@ -24,8 +25,8 @@ public class SimpleServer {
         }
 
         void doConnections(Socket socket) throws IOException {
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
+            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter((socket.getOutputStream()))), true);
         }
 
         private void serve() throws IOException {
@@ -38,7 +39,7 @@ public class SimpleServer {
         }
     }
 
-    public static final int PORTO = 8080;
+    private int PORTO;
 
     public SimpleServer() {
         try {
@@ -50,11 +51,15 @@ public class SimpleServer {
         ServerSocket ss = new ServerSocket(PORTO);
         try {
             while(true){
-                Socket socket = ss.accept();
-                new DealWithClient(socket).start();
+                Socket s = ss.accept();
+                new DealWithClient(s).start();
             }
         } finally {
             ss.close();
         }
+    }
+
+    public int getPorto() {
+        return PORTO;
     }
 }

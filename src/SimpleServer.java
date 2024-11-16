@@ -27,6 +27,7 @@ public class SimpleServer {
         void doConnections(Socket socket) throws IOException {
             in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
             out = new PrintWriter(new BufferedWriter(new OutputStreamWriter((socket.getOutputStream()))), true);
+            System.out.println("Client " + socket.getPort() + " connected");
         }
 
         private void serve() throws IOException {
@@ -39,16 +40,17 @@ public class SimpleServer {
         }
     }
 
-    private int PORTO;
+    private int port;
 
-    public SimpleServer() {
-        try {
-            startServing();
-        } catch (IOException e) {}
+    public SimpleServer(int port) {
+        this.port = port;
+//        try {
+//            startServing();
+//        } catch (IOException e) {}
     }
 
     public void startServing() throws IOException {
-        ServerSocket ss = new ServerSocket(PORTO);
+        ServerSocket ss = new ServerSocket(port);
         try {
             while(true){
                 Socket s = ss.accept();
@@ -59,7 +61,7 @@ public class SimpleServer {
         }
     }
 
-    public int getPorto() {
-        return PORTO;
+    public int getPort() {
+        return port;
     }
 }

@@ -10,15 +10,14 @@ public class GUI {
     private DownloadTasksManager downloadTasksManager;
     private String folderName;
 
-    public GUI(String endereco, int porta, DownloadTasksManager downloadTasksManager) {
-        node = new Node(porta, folderName);
-        this.downloadTasksManager = downloadTasksManager;
+    public GUI(Node node) {
+        this.node = node;
         setup();
     }
 
     public void setup() {
         // Setup Inicial da GUI
-        JFrame frame = new JFrame("IscTorrent - IP: " /*+ node.getEndereco()*/ + " Porta: " + node.getPorta());
+        JFrame frame = new JFrame("IscTorrent - IP: localhost" + " Porta: " + node.getPort());
         frame.setPreferredSize(new Dimension(1000, 300));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -76,10 +75,10 @@ public class GUI {
         frame.add(panel, BorderLayout.CENTER);
         panel.setLayout(new GridLayout(1, 4));
         panel.add(new JLabel("Endereço: "));
-        JTextField endereco = new JTextField();
+        JTextField endereco = new JTextField("localhost");
         panel.add(endereco);
         panel.add(new JLabel("Porta: "));
-        JTextField porta = new JTextField();
+        JTextField porta = new JTextField("8080");
         panel.add(porta);
 
 
@@ -97,7 +96,8 @@ public class GUI {
         JButton connectButton = new JButton("Connect");
         connectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                node.connectNode(/*endereco.get(),*/ Integer.parseInt(porta.getText()));
+                frame.dispose();
+                node.connectClient(Integer.parseInt(porta.getText()));
             }
         });
         buttonPanel.add(connectButton);

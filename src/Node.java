@@ -6,20 +6,21 @@ import java.util.List;
 
 public class Node {
 
-    private int porta;
+    private int port;
     private List<File> fileList = new ArrayList<>();
-    private List<Node> connectedNodes = new ArrayList<>();
+    private List<Integer> connectedPorts = new ArrayList<>();
     private DownloadTasksManager downloadManager;
     public SimpleClient cliente;
     public SimpleServer servidor;
 
 
-    public Node(int porta, String folderName) {
-        this.porta = porta;
+    public Node(int port, String folderName) {
+        this.port = port;
         createFileList(folderName);
+        new GUI(this);
 
-        this.cliente = new SimpleClient(porta);
-        this.servidor = new SimpleServer();
+        this.cliente = new SimpleClient(port);
+        this.servidor = new SimpleServer(port);
         new Thread(() -> {
             try {
                 servidor.startServing();
@@ -29,35 +30,33 @@ public class Node {
         }).start();
     }
 
-    public void connectNode(/*String addr,*/int porta) {
-        if (getPorta() == porta) {
+    public void connectClient(int port) {
+        if (getPort() == port)
             throw new IllegalArgumentException("Não te podes ligar a ti mesmo!!");
+        if (!isAlreadyConnected(port)) {
+            addConectedPorts(port);
+            cliente.runClient(port);
         }
     }
-
-//    public List<File> getFilteredFiles(WordSearchMessage filter) {
-//
-//    }
 
     public List<File> getFileList() {
         return fileList;
     }
 
-    public List<Node> getConnectedNodes() {
-        return connectedNodes;
+    public List<Integer> getConnectedPorts() {
+        return connectedPorts;
     }
 
-    public int getPorta() {
-        return porta;
+    public int getPort() {
+        return port;
     }
 
     public void addFile(File file) {
         fileList.add(file);
     }
 
-    public void addConectedNode(Node node) {
-        connectedNodes.add(node);
-        //System.out.println(this.getEndereco() + " is now conected to " + node.getEndereco());
+    public void addConectedPorts(int port) {
+        connectedPorts.add(port);
     }
 
     private void createFileList(String folderName) {
@@ -69,6 +68,16 @@ public class Node {
                 }
             }
         }
+    }
+
+    private boolean isAlreadyConnected(int port) {
+        for (int p : connectedPorts) {
+            if(port == p){
+                System.out.println("Já estás conectado ao servidor de porta " + port);
+                return true;
+            }
+        }
+        return false;
     }
 
     private class FileSearchResult {

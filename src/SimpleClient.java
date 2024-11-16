@@ -7,29 +7,25 @@ public class SimpleClient {
     private BufferedReader in;
     private PrintWriter out;
     private Socket socket;
+    private int port;
 
-    public SimpleClient(int PORTO) {
-        runClient(PORTO);
+    public SimpleClient(int port) {
+        this.port = port;
     }
 
-    public void runClient(int PORTO) {
+    public void runClient(int port){
         try {
-            connectToServer(PORTO);
+            connectToServer(port);
+            System.out.println("Connected to server");
             sendMessages();
         } catch (IOException e) {
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {//...
-            }
+            e.printStackTrace(); // Print the stack trace for debugging
         }
     }
 
-    void connectToServer(int PORTO) throws IOException {
+    void connectToServer(int port) throws IOException {
         InetAddress addr = InetAddress.getByName(null);
-        System.out.println("Endereço: " + addr);
-        socket = new Socket(addr, PORTO);
-        System.out.println("Socket: " + socket);
+        socket = new Socket(addr, port);
         in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
         out = new PrintWriter(new BufferedWriter(new OutputStreamWriter((socket.getOutputStream()))), true);
     }

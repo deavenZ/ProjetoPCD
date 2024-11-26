@@ -3,6 +3,7 @@ import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 public class GUI {
 
@@ -97,7 +98,9 @@ public class GUI {
         connectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
-                node.connectClient(Integer.parseInt(porta.getText()));
+                String addr = endereco.getText();
+                int port = Integer.parseInt(porta.getText());
+                node.connectClient(addr, port);
             }
         });
         buttonPanel.add(connectButton);

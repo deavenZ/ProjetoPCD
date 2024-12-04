@@ -2,21 +2,25 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Node {
 
-    private InetAddress ip;
+    private InetAddress address;
     private int port;
     private List<File> fileList = new ArrayList<>();
     private List<Integer> connectedPorts = new ArrayList<>();
     private List<NodeAgent> nodeAgents = new ArrayList<>();
     private DownloadTasksManager downloadManager;
 
+    public Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
+
 
     public Node(int port, String folderName) {
         this.port = port;
-//      createFileList(folderName);
+        initializeAddress();
         startServing();
     }
 
@@ -25,10 +29,9 @@ public class Node {
             try (ServerSocket ss = new ServerSocket(port)) {
                 while (true) {
                     Socket socket = ss.accept();
-                    System.out.println("Received a request");
                     NodeAgent na = new NodeAgent(this, socket);
-                    nodeAgents.add(na);
                     na.start();
+                    nodeAgents.add(na);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -37,36 +40,33 @@ public class Node {
     }
 
 
-    public void connectClient(String addr, int port){
- //       if (getPort() == port) {
-        InetAddress address = null;
-        try {
-            address = InetAddress.getByName(addr);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        System.out.println(address);
-        System.out.println(port);
-
-        Socket socket = null;
+    public void connectClient(InetAddress address, int port){
+        if(port == this.port)
+            throw new IllegalArgumentException("Can't connect to yourself!");
+        System.out.println("Connecting to server: " + address.getHostName() + ":" + port);
+        Socket socket;
         try {
             socket = new Socket(address, port);
             NodeAgent na = new NodeAgent(this, socket);
-            nodeAgents.add(na);
+            System.out.println("Starting agent for port: " + socket.getPort());
             na.start();
+            na.sendConnectionRequest(new NewConnectionRequest(this.address, this.port));
+            nodeAgents.add(na);
         } catch (IOException e) {
-            System.out.println("Socket");
             e.printStackTrace();
         }
     }
 
-    public List<String> searchFiles(WordSearchMessage keywords) {
-        String keyword = keywords.getKeyword();
-        List<String> files = new ArrayList<>();
+    public void searchFiles(WordSearchMessage keywords) {
         for (NodeAgent na : nodeAgents) {
             na.sendData(keywords);
         }
-        return files;
+    }
+
+    public void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
+        for(FileSearchResult wantedFile : wantedFiles) {
+            searchedFiles.put(wantedFile, searchedFiles.get(wantedFile)+1);
+        }
     }
 
     private void createFileList(String folderName) {
@@ -80,53 +80,28 @@ public class Node {
         }
     }
 
-    public void broadcast() {
-
-    }
 
     private void initializeAddress() {
-
-    }
-
-    public List<File> getFileList() {
-        return fileList;
-    }
-
-    public List<Integer> getConnectedPorts() {
-        return connectedPorts;
+        try {
+            address = InetAddress.getByName("localhost");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public InetAddress getAddress() {
-        return ip;
+        return address;
     }
 
     public int getPort() {
         return port;
     }
 
+    public List<File> getFileList() {
+        return fileList;
+    }
+
     public void addFile(File file) {
         fileList.add(file);
-    }
-
-    public void addConectedPorts(int port) {
-        connectedPorts.add(port);
-    }
-
-    private class FileSearchResult {
-
-        private WordSearchMessage keywords;
-        private long size;
-        private String fileName;
-        private String endereco;
-        private String porta;
-        private Node node;
-
-        public FileSearchResult(WordSearchMessage keywords, long size, String fileName, String endereco, String porta) {
-            this.keywords = keywords;
-            this.size = size;
-            this.fileName = fileName;
-            this.endereco = endereco;
-            this.porta = porta;
-        }
     }
 }

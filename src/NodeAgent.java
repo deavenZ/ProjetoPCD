@@ -1,9 +1,8 @@
-import com.sun.jdi.event.ThreadStartEvent;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +11,20 @@ public class NodeAgent extends Thread{
 
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private Node node;
+    private Node mainNode;
     private Socket socket;
+    private InetAddress clientAddress;
+    private int clientPort;
 
     public NodeAgent(Node node, Socket socket) {
-        this.node = node;
+        this.mainNode = node;
         this.socket = socket;
+        try {
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void run() {
@@ -30,18 +37,27 @@ public class NodeAgent extends Thread{
 
     private void serve() throws IOException {
         try {
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
-
             while (true) {
                 Object message = in.readObject(); // Receive a message from the connected node
-                if (message instanceof String) {
-                    String keywords = (String) message;
-                    askForFiles(keywords); // Process the message
+                if(message instanceof NewConnectionRequest) {
+                    NewConnectionRequest request = (NewConnectionRequest) message;
+                    clientAddress = request.getEndereco();
+                    clientPort = request.getPorta();
+                    System.out.println("Now connected to: " + clientAddress.getHostAddress() + ":" + clientPort);
+                }
+                if(message instanceof WordSearchMessage) {
+                    WordSearchMessage search = (WordSearchMessage) message;
+                    giveWantedFiles(search);
+                }
+                if(message instanceof List<?> list) {
+                    if (!list.isEmpty() && list.get(0) instanceof FileSearchResult) {
+                        List<FileSearchResult> wantedFiles = (List<FileSearchResult>) list;
+                        mainNode.updateSearchedFiles(wantedFiles);
+                    }
                 }
             }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Connection closed: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         } finally {
             closeThreads(in, out, socket);
         }
@@ -57,16 +73,6 @@ public class NodeAgent extends Thread{
         }
     }
 
-    private void handleRequest(String message) {
-        if (message.equals("GET_FILES")) {
-            try {
-                out.writeObject(node.getFileList()); // Send the list of files
-            } catch (IOException e) {
-                System.err.println("Failed to send file list: " + e.getMessage());
-            }
-        }
-    }
-
     public void sendData(Object data) {
         try {
             out.writeObject(data);  // Send the data to the client
@@ -76,21 +82,23 @@ public class NodeAgent extends Thread{
         }
     }
 
-    private void askForFiles(WordSearchMessage keywords) {
+    private void giveWantedFiles(WordSearchMessage keywords) {
         List<FileSearchResult> filesWanted = new ArrayList<FileSearchResult>();
-        for(File file : node.getFileList()) {
+        for(File file : mainNode.getFileList()) {
             String fileName = file.getName();
             if(fileName.contains(keywords.getKeyword())) {
-                FileSearchResult wantedFile = new FileSearchResult(keywords, file.length(), fileName, node.getAddress(), node.getPort());
+                FileSearchResult wantedFile = new FileSearchResult(keywords, file.length(), fileName, mainNode.getAddress(), mainNode.getPort());
                 filesWanted.add(wantedFile);
             }
         }
         if(!filesWanted.isEmpty()) {
-            try {
-                out.writeObject(filesWanted);
-            } catch (IOException e) {}
+            sendData(filesWanted);
         }
     }
 
-    private void sendData(Object object)
+    public void sendConnectionRequest(NewConnectionRequest request) {
+        System.out.println("Sending Connection request to " + request.getEndereco().getHostAddress() + ":" + request.getPorta());
+        sendData(request);
+    }
+
 }

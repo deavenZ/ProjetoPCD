@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class GUI {
 
@@ -18,7 +20,7 @@ public class GUI {
 
     public void setup() {
         // Setup Inicial da GUI
-        JFrame frame = new JFrame("IscTorrent - IP: localhost" + " Porta: " + node.getPort());
+        JFrame frame = new JFrame("IscTorrent: IP: " + node.getAddress().getHostName() + " Porta: " + node.getPort());
         frame.setPreferredSize(new Dimension(1000, 300));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -33,7 +35,8 @@ public class GUI {
         JButton searchButton = new JButton("Procurar");
         searchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-
+                WordSearchMessage search = new WordSearchMessage(textoAProcurar.getText());
+                node.searchFiles(search);
             }
         });
         panel.add(searchButton);
@@ -98,9 +101,13 @@ public class GUI {
         connectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
-                String addr = endereco.getText();
+                String address = endereco.getText();
                 int port = Integer.parseInt(porta.getText());
-                node.connectClient(addr, port);
+                try {
+                    node.connectClient(InetAddress.getByName(address), port);
+                } catch (UnknownHostException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
         buttonPanel.add(connectButton);

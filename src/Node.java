@@ -47,10 +47,10 @@ public class Node {
         Socket socket;
         try {
             socket = new Socket(address, port);
-            NodeAgent na = new NodeAgent(this, socket);
             System.out.println("Starting agent for port: " + socket.getPort());
+            NodeAgent na = new NodeAgent(this, socket);
             na.start();
-            na.sendConnectionRequest(new NewConnectionRequest(this.address, this.port));
+            na.sendConnectionRequest(new NewConnectionRequest(this.address.getHostAddress(), this.port));
             nodeAgents.add(na);
         } catch (IOException e) {
             e.printStackTrace();

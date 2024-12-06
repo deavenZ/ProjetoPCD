@@ -103,11 +103,7 @@ public class GUI {
                 frame.dispose();
                 String address = endereco.getText();
                 int port = Integer.parseInt(porta.getText());
-                try {
-                    node.connectClient(InetAddress.getByName(address), port);
-                } catch (UnknownHostException ex) {
-                    throw new RuntimeException(ex);
-                }
+                connectClient(address, port);
             }
         });
         buttonPanel.add(connectButton);
@@ -116,5 +112,13 @@ public class GUI {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private void connectClient(String address, int port) {
+        try {
+            node.connectClient(InetAddress.getByName(address), port);
+        } catch (UnknownHostException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

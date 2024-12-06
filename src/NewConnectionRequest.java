@@ -3,16 +3,20 @@ import java.net.UnknownHostException;
 
 public class NewConnectionRequest {
 
-    private InetAddress endereco;
+    private String endereco;
     private int porta;
 
-    public NewConnectionRequest(InetAddress endereco, int porta) {
+    public NewConnectionRequest(String endereco, int porta) {
         this.endereco = endereco;
         this.porta = porta;
     }
 
     public InetAddress getEndereco() {
-        return endereco;
+        try {
+            return InetAddress.getByName(endereco);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public int getPorta() {

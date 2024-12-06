@@ -19,12 +19,6 @@ public class NodeAgent extends Thread{
     public NodeAgent(Node node, Socket socket) {
         this.mainNode = node;
         this.socket = socket;
-        try {
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void run() {
@@ -35,25 +29,26 @@ public class NodeAgent extends Thread{
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void serve() throws IOException {
         try {
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
             while (true) {
-                Object message = in.readObject(); // Receive a message from the connected node
-                if(message instanceof NewConnectionRequest) {
-                    NewConnectionRequest request = (NewConnectionRequest) message;
-                    clientAddress = request.getEndereco();
-                    clientPort = request.getPorta();
-                    System.out.println("Now connected to: " + clientAddress.getHostAddress() + ":" + clientPort);
-                }
-                if(message instanceof WordSearchMessage) {
-                    WordSearchMessage search = (WordSearchMessage) message;
-                    giveWantedFiles(search);
-                }
-                if(message instanceof List<?> list) {
-                    if (!list.isEmpty() && list.get(0) instanceof FileSearchResult) {
-                        List<FileSearchResult> wantedFiles = (List<FileSearchResult>) list;
-                        mainNode.updateSearchedFiles(wantedFiles);
+                Object message = in.readObject();// Receive a message from the connected node
+                switch (message) {
+                    case NewConnectionRequest request -> {
+                        clientAddress = request.getEndereco();
+                        clientPort = request.getPorta();
+                        System.out.println("Now connected to: " + clientAddress.getHostAddress() + ":" + clientPort);
                     }
+                    case WordSearchMessage search -> {
+                        giveWantedFiles(search);
+                    }
+                    case List<?> wantedFiles -> {
+                        mainNode.updateSearchedFiles((List<FileSearchResult>) wantedFiles);
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + message);
                 }
             }
         } catch (ClassNotFoundException e) {
@@ -97,8 +92,13 @@ public class NodeAgent extends Thread{
     }
 
     public void sendConnectionRequest(NewConnectionRequest request) {
-        System.out.println("Sending Connection request to " + request.getEndereco().getHostAddress() + ":" + request.getPorta());
-        sendData(request);
+        try {
+            out = new ObjectOutputStream(socket.getOutputStream());
+            System.out.println("Sending Connection request to " + request.getEndereco().getHostAddress() + ":" + request.getPorta());
+            sendData(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

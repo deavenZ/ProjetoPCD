@@ -79,7 +79,7 @@ public class GUI {
         frame.add(panel, BorderLayout.CENTER);
         panel.setLayout(new GridLayout(1, 4));
         panel.add(new JLabel("Endereço: "));
-        JTextField endereco = new JTextField("localhost");
+        JTextField endereco = new JTextField("127.0.0.1");
         panel.add(endereco);
         panel.add(new JLabel("Porta: "));
         JTextField porta = new JTextField("8080");

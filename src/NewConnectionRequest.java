@@ -1,7 +1,8 @@
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class NewConnectionRequest {
+public class NewConnectionRequest implements Serializable {
 
     private String endereco;
     private int porta;

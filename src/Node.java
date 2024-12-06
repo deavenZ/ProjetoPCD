@@ -43,6 +43,7 @@ public class Node {
     public void connectClient(InetAddress address, int port){
         if(port == this.port)
             throw new IllegalArgumentException("Can't connect to yourself!");
+
         System.out.println("Connecting to server: " + address.getHostName() + ":" + port);
         Socket socket;
         try {
@@ -70,7 +71,7 @@ public class Node {
     }
 
     private void createFileList(String folderName) {
-        File[] files = new File(folderName).listFiles();
+        File[] files = new File("C:\\Users\\jmmas2\\Documents\\ISCTE\\3º Ano - 1º Semestre\\PDC\\ProjetoPCD\\" + folderName).listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file != null && file.getName().endsWith("mp3")) {
@@ -83,8 +84,8 @@ public class Node {
 
     private void initializeAddress() {
         try {
-            address = InetAddress.getByName("localhost");
-        } catch (Exception e) {
+            address = InetAddress.getByName("127.0.0.1");
+        } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
     }

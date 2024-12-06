@@ -36,6 +36,7 @@ public class NodeAgent extends Thread{
             out = new ObjectOutputStream(socket.getOutputStream());
             while (true) {
                 Object message = in.readObject();// Receive a message from the connected node
+                System.out.println("Received object of type: " + message.getClass());
                 switch (message) {
                     case NewConnectionRequest request -> {
                         clientAddress = request.getEndereco();
@@ -53,8 +54,6 @@ public class NodeAgent extends Thread{
             }
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
-        } finally {
-            closeThreads(in, out, socket);
         }
     }
 
@@ -70,8 +69,9 @@ public class NodeAgent extends Thread{
 
     public void sendData(Object data) {
         try {
-            out.writeObject(data);  // Send the data to the client
-            out.flush();  // Ensure the data is sent immediately
+            out.writeObject(data);
+            out.flush();
+            out.reset();
         } catch (IOException e) {
             System.err.println("Failed to send data: " + e.getMessage());
         }
@@ -94,7 +94,7 @@ public class NodeAgent extends Thread{
     public void sendConnectionRequest(NewConnectionRequest request) {
         try {
             out = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println("Sending Connection request to " + request.getEndereco().getHostAddress() + ":" + request.getPorta());
+            System.out.println("Sending Connection request to client.");
             sendData(request);
         } catch (IOException e) {
             throw new RuntimeException(e);

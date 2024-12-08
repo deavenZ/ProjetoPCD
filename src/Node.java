@@ -14,12 +14,16 @@ public class Node {
     private List<Integer> connectedPorts = new ArrayList<>();
     private List<NodeAgent> nodeAgents = new ArrayList<>();
     private DownloadTasksManager downloadManager;
+    private GUI gui;
+    private String folderName;
 
-    public Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
+    private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
 
 
     public Node(int port, String folderName) {
         this.port = port;
+        this.folderName = IscTorrent.PATH + folderName;
+        createFileList();
         initializeAddress();
         startServing();
     }
@@ -66,15 +70,18 @@ public class Node {
 
     public void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
         for(FileSearchResult wantedFile : wantedFiles) {
-            searchedFiles.put(wantedFile, searchedFiles.get(wantedFile)+1);
+            searchedFiles.merge(wantedFile, 1, Integer::sum);
         }
+        gui.setSearchedFiles(searchedFiles);
     }
 
-    private void createFileList(String folderName) {
-        File[] files = new File("C:\\Users\\jmmas2\\Documents\\ISCTE\\3º Ano - 1º Semestre\\PDC\\ProjetoPCD\\" + folderName).listFiles();
+    private void createFileList() {
+        System.out.println("Creating file list: " + folderName);
+        File[] files = new File(folderName).listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file != null && file.getName().endsWith("mp3")) {
+                System.out.println("Adding file: " + file.getName());
+                if (file.getName().endsWith("mp3")) {
                     addFile(file);
                 }
             }
@@ -104,5 +111,13 @@ public class Node {
 
     public void addFile(File file) {
         fileList.add(file);
+    }
+
+    public void setGui(GUI gui) {
+        this.gui = gui;
+    }
+
+    public String getFolderName() {
+        return folderName;
     }
 }

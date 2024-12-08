@@ -4,12 +4,12 @@ import java.util.List;
 
 public class DownloadTasksManager {
 
-    private static final int NUM_CHUNKS = 1024;
+    private static final int NUM_CHUNKS = 10024;
 
     private List<FileBlockRequestMessage> chunkList;
 
-    public DownloadTasksManager() {
-        chunkList = new ArrayList<FileBlockRequestMessage>();
+    public DownloadTasksManager(FileSearchResult fileSearchResult) {
+        
     }
 
     public void downloadFile(File file) {

@@ -16,9 +16,10 @@ public class NodeAgent extends Thread{
     private InetAddress clientAddress;
     private int clientPort;
 
-    public NodeAgent(Node node, Socket socket) {
+    public NodeAgent(Node node, Socket socket) throws IOException {
         this.mainNode = node;
         this.socket = socket;
+        out = new ObjectOutputStream(socket.getOutputStream());
     }
 
     public void run() {
@@ -33,10 +34,9 @@ public class NodeAgent extends Thread{
     private void serve() throws IOException {
         try {
             in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
             while (true) {
                 Object message = in.readObject();// Receive a message from the connected node
-                System.out.println("Received object of type: " + message.getClass());
+                System.out.println("Received object of type: " + message.getClass().getName());
                 switch (message) {
                     case NewConnectionRequest request -> {
                         clientAddress = request.getEndereco();
@@ -71,6 +71,7 @@ public class NodeAgent extends Thread{
         try {
             out.writeObject(data);
             out.flush();
+            System.out.println("Sending data: " + data.getClass().getName());
             out.reset();
         } catch (IOException e) {
             System.err.println("Failed to send data: " + e.getMessage());
@@ -78,11 +79,14 @@ public class NodeAgent extends Thread{
     }
 
     private void giveWantedFiles(WordSearchMessage keywords) {
-        List<FileSearchResult> filesWanted = new ArrayList<FileSearchResult>();
+        List<FileSearchResult> filesWanted = new ArrayList<>();
+        System.out.println("Searching for files...");
         for(File file : mainNode.getFileList()) {
             String fileName = file.getName();
-            if(fileName.contains(keywords.getKeyword())) {
-                FileSearchResult wantedFile = new FileSearchResult(keywords, file.length(), fileName, mainNode.getAddress(), mainNode.getPort());
+            System.out.println("Searching for file: " + fileName);
+            if(fileName.toLowerCase().contains(keywords.getKeyword().toLowerCase())) {
+                System.out.println("Found file: " + fileName);
+                FileSearchResult wantedFile = new FileSearchResult(keywords, file.length(), mainNode.getFolderName() + "\\" + fileName, mainNode.getAddress(), mainNode.getPort());
                 filesWanted.add(wantedFile);
             }
         }
@@ -92,13 +96,8 @@ public class NodeAgent extends Thread{
     }
 
     public void sendConnectionRequest(NewConnectionRequest request) {
-        try {
-            out = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println("Sending Connection request to client.");
-            sendData(request);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        System.out.println("Sending Connection request to client.");
+        sendData(request);
     }
 
 }

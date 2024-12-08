@@ -6,15 +6,17 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GUI {
 
     private Node node;
-    private DownloadTasksManager downloadTasksManager;
-    private String folderName;
+    private JList<String> fileList = new JList<>();
 
     public GUI(Node node) {
         this.node = node;
+        node.setGui(this);
         setup();
     }
 
@@ -42,9 +44,8 @@ public class GUI {
         panel.add(searchButton);
 
         // List of Torrents
-        JList<String> list = new JList<String>();
-        list.setSize(1000, 600);
-        frame.add(list, BorderLayout.CENTER);
+        fileList.setSize(1000, 600);
+        frame.add(fileList, BorderLayout.CENTER);
 
         // Download and Connect Buttons
         JPanel buttonPanel = new JPanel();
@@ -52,6 +53,11 @@ public class GUI {
         frame.add(buttonPanel, BorderLayout.EAST);
         buttonPanel.setLayout(new GridLayout(2, 1));
         JButton downloadButton = new JButton("Download");
+        downloadButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
         JButton connectButton = new JButton("Ligar a Nó");
         connectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -120,5 +126,13 @@ public class GUI {
         } catch (UnknownHostException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public void setSearchedFiles(Map<FileSearchResult, Integer> searchedFiles) {
+        DefaultListModel<String> files = new DefaultListModel<String>();
+        for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
+           files.addElement(entry.getKey() + " <" + entry.getValue() + ">");
+        }
+        fileList.setModel(files);
     }
 }

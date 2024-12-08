@@ -1,4 +1,6 @@
-public class WordSearchMessage {
+import java.io.Serializable;
+
+public class WordSearchMessage implements Serializable {
 
     private String keyword;
 

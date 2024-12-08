@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.file.Files;
@@ -9,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileSearchResult {
+public class FileSearchResult implements Serializable {
 
     private WordSearchMessage keywords;
     private long size;
@@ -27,7 +28,7 @@ public class FileSearchResult {
         this.porta = porta;
     }
 
-    public int digestFile(File file) {
+    private int digestFile(File file) {
         try {
             byte[] fileContent = Files.readAllBytes(file.toPath());
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(fileContent);
@@ -37,9 +38,14 @@ public class FileSearchResult {
         }
     }
 
+    public String getFilePath() {
+        return fileName;
+    }
+
     @Override
     public String toString() {
-        return fileName;
+        String[] separatedFile = fileName.split("\\\\");
+        return separatedFile[separatedFile.length - 1];
     }
 
     @Override

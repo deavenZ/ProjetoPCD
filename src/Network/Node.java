@@ -1,3 +1,9 @@
+package Network;
+
+import Download.DownloadTasksManager;
+import Messages.*;
+import Runnable.IscTorrent;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
@@ -45,9 +51,14 @@ public class Node {
 
 
     public void connectClient(InetAddress address, int port){
-        if(port == this.port)
-            throw new IllegalArgumentException("Can't connect to yourself!");
-
+        if(port == this.port) {
+            System.err.println("Can't connect to yourself!");
+            return;
+        }
+        if(connectedPorts.contains(port)) {
+            System.err.println("Already Connected!");
+            return;
+        }
         System.out.println("Connecting to server: " + address.getHostName() + ":" + port);
         Socket socket;
         try {
@@ -56,6 +67,7 @@ public class Node {
             NodeAgent na = new NodeAgent(this, socket);
             na.start();
             na.sendConnectionRequest(new NewConnectionRequest(this.address.getHostAddress(), this.port));
+            addConnectedPort(socket.getPort());
             nodeAgents.add(na);
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,7 +81,8 @@ public class Node {
     }
 
     public void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
-        for(FileSearchResult wantedFile : wantedFiles) {
+        searchedFiles.clear();
+        for (FileSearchResult wantedFile : wantedFiles) {
             searchedFiles.merge(wantedFile, 1, Integer::sum);
         }
         gui.setSearchedFiles(searchedFiles);
@@ -80,8 +93,8 @@ public class Node {
         File[] files = new File(folderName).listFiles();
         if (files != null) {
             for (File file : files) {
-                System.out.println("Adding file: " + file.getName());
                 if (file.getName().endsWith("mp3")) {
+                    System.out.println("Adding file: " + file.getName());
                     addFile(file);
                 }
             }
@@ -119,5 +132,13 @@ public class Node {
 
     public String getFolderName() {
         return folderName;
+    }
+
+    public void addConnectedPort(int port) {
+        connectedPorts.add(port);
+    }
+
+    public void clearFileList() {
+        fileList.clear();
     }
 }

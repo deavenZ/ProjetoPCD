@@ -1,5 +1,8 @@
+package Download;
+
+import Messages.FileSearchResult;
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DownloadTasksManager {
@@ -9,7 +12,7 @@ public class DownloadTasksManager {
     private List<FileBlockRequestMessage> chunkList;
 
     public DownloadTasksManager(FileSearchResult fileSearchResult) {
-        
+
     }
 
     public void downloadFile(File file) {

@@ -1,14 +1,11 @@
+package Messages;
+
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FileSearchResult implements Serializable {
 
@@ -45,7 +42,7 @@ public class FileSearchResult implements Serializable {
     @Override
     public String toString() {
         String[] separatedFile = fileName.split("\\\\");
-        return separatedFile[separatedFile.length - 1];
+        return separatedFile[separatedFile.length - 1] + hash;
     }
 
     @Override

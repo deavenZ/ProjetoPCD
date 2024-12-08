@@ -1,20 +1,25 @@
+package Network;
+
+import Messages.FileSearchResult;
+import Messages.WordSearchMessage;
+
 import javax.swing.*;
-import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class GUI {
 
-    private Node node;
+    private Network.Node node;
     private JList<String> fileList = new JList<>();
+    private List<FileSearchResult> fileInList = new ArrayList<>();
 
-    public GUI(Node node) {
+    public GUI(Network.Node node) {
         this.node = node;
         node.setGui(this);
         setup();
@@ -55,6 +60,14 @@ public class GUI {
         JButton downloadButton = new JButton("Download");
         downloadButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                if(fileList.getModel().getSize() == 0) {
+                    JOptionPane.showMessageDialog(frame, "Não tem nenhum arquivo para fazer download!");
+                    return;
+                }
+                if(fileList.getSelectedValue() == null) {
+                    JOptionPane.showMessageDialog(frame, "Selecione um arquivo para download!");
+                    return;
+                }
 
             }
         });
@@ -129,10 +142,15 @@ public class GUI {
     }
 
     public void setSearchedFiles(Map<FileSearchResult, Integer> searchedFiles) {
-        DefaultListModel<String> files = new DefaultListModel<String>();
+        DefaultListModel<String> files = new DefaultListModel<>();
         for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
            files.addElement(entry.getKey() + " <" + entry.getValue() + ">");
+           fileInList.add(entry.getKey());
         }
         fileList.setModel(files);
+    }
+
+    private void downloadSelectedFile() {
+        fileList.getSelectedValue();
     }
 }

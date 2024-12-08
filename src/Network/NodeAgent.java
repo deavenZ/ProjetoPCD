@@ -1,3 +1,9 @@
+package Network;
+
+import Messages.FileSearchResult;
+import Messages.NewConnectionRequest;
+import Messages.WordSearchMessage;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -41,6 +47,7 @@ public class NodeAgent extends Thread{
                     case NewConnectionRequest request -> {
                         clientAddress = request.getEndereco();
                         clientPort = request.getPorta();
+                        mainNode.addConnectedPort(clientPort);
                         System.out.println("Now connected to: " + clientAddress.getHostAddress() + ":" + clientPort);
                     }
                     case WordSearchMessage search -> {

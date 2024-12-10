@@ -1,22 +1,23 @@
 package Network;
 
 import Download.DownloadTasksManager;
-import Download.FileBlockAnswerMessage;
-import Download.FileBlockRequestMessage;
+import Messages.FileBlockAnswerMessage;
+import Messages.FileBlockRequestMessage;
 import Messages.FileSearchResult;
 import Messages.NewConnectionRequest;
 import Messages.WordSearchMessage;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NodeAgent extends Thread{
+
+    public static final int SIZE = 1024;
+    public static final int TIMEOUT = 300;
 
     private ObjectInputStream in;
     private ObjectOutputStream out;
@@ -60,10 +61,24 @@ public class NodeAgent extends Thread{
                         mainNode.updateSearchedFiles((List<FileSearchResult>) wantedFiles);
                     }
                     case FileBlockAnswerMessage download -> {
-                        DownloadTasksManager dtm = mainNode.getOrCreateDTM(download.getFileHash());
+                        DownloadTasksManager dtm = mainNode.getOrCreateDTM(download.getFileHash(), download.getFileName());
+                        System.out.println("Receiving file chunk: " + download);
+                        dtm.saveChunk(download);
+                        if(dtm.isComplete()) {
+                            dtm.downloadChunks();
+                            mainNode.completeDownload(download.getFileHash());
+                        }
                     }
                     case FileBlockRequestMessage upload -> {
-
+                        List<FileBlockAnswerMessage> wantedChunks = divideFileIntoChunks(upload);
+                        for(FileBlockAnswerMessage wantedChunk : wantedChunks) {
+                            sendData(wantedChunk);
+                            try {
+                                wait(TIMEOUT);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + message);
                 }
@@ -71,6 +86,54 @@ public class NodeAgent extends Thread{
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<FileBlockAnswerMessage> divideFileIntoChunks(FileBlockRequestMessage request) {
+        List<FileBlockAnswerMessage> chunks = new ArrayList<>();
+        File file = mainNode.getFileByHash(request.getFileHash()); // Retrieve the file using the file hash
+
+        if (file == null) {
+            System.err.println("Requested file not found for hash: " + request.getFileHash());
+            return chunks; // Return an empty list if the file doesn't exist
+        }
+
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            int offset = request.getOffset();
+            int size = request.getSize();
+
+            // Ensure the offset is within the file size
+            if (offset >= file.length()) {
+                System.err.println("Offset exceeds file size for hash: " + request.getFileHash());
+                return chunks;
+            }
+
+            // Ensure the requested size does not exceed the remaining file size
+            int bytesToRead = (int) Math.min(size, file.length() - offset);
+
+            raf.seek(offset); // Move the file pointer to the requested offset
+
+            while (bytesToRead > 0) {
+                int chunkSize = Math.min(SIZE, bytesToRead); // Use the fixed chunk size
+                byte[] buffer = new byte[chunkSize];
+                int bytesRead = raf.read(buffer);
+
+                if (bytesRead == -1) break; // End of file reached
+
+                chunks.add(new FileBlockAnswerMessage(
+                        file.getName(),
+                        offset,
+                        request.getFileHash(),
+                        Arrays.copyOf(buffer, bytesRead) // Adjust buffer size for the last chunk
+                ));
+
+                offset += bytesRead; // Update the offset for the next chunk
+                bytesToRead -= bytesRead; // Decrease the remaining bytes to read
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading file for hash " + request.getFileHash() + ": " + e.getMessage());
+        }
+
+        return chunks;
     }
 
     private void closeThreads(ObjectInputStream in, ObjectOutputStream out, Socket socket) {
@@ -83,7 +146,7 @@ public class NodeAgent extends Thread{
         }
     }
 
-    public void sendData(Object data) {
+    public synchronized void sendData(Object data) {
         try {
             out.writeObject(data);
             out.flush();

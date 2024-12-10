@@ -89,9 +89,18 @@ public class Node {
         gui.setSearchedFiles(searchedFiles);
     }
 
-    public DownloadTasksManager getOrCreateDTM(int fileHash) {
+    public File getFileByHash(int hash) {
+        for (File file : fileList) {
+            if (file.hashCode() == hash) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    public DownloadTasksManager getOrCreateDTM(int fileHash, String fileName) {
         return activeDownloads.computeIfAbsent(fileHash, f-> {
-            return new DownloadTasksManager(fileHash);
+            return new DownloadTasksManager(fileHash, fileName, folderName);
         });
     }
 

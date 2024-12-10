@@ -1,5 +1,8 @@
 package Network;
 
+import Download.DownloadTasksManager;
+import Download.FileBlockAnswerMessage;
+import Download.FileBlockRequestMessage;
 import Messages.FileSearchResult;
 import Messages.NewConnectionRequest;
 import Messages.WordSearchMessage;
@@ -37,7 +40,7 @@ public class NodeAgent extends Thread{
     }
 
     @SuppressWarnings("unchecked")
-    private void serve() throws IOException {
+    private synchronized void serve() throws IOException {
         try {
             in = new ObjectInputStream(socket.getInputStream());
             while (true) {
@@ -55,6 +58,12 @@ public class NodeAgent extends Thread{
                     }
                     case List<?> wantedFiles -> {
                         mainNode.updateSearchedFiles((List<FileSearchResult>) wantedFiles);
+                    }
+                    case FileBlockAnswerMessage download -> {
+                        DownloadTasksManager dtm = mainNode.getOrCreateDTM(download.getFileHash());
+                    }
+                    case FileBlockRequestMessage upload -> {
+
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + message);
                 }
@@ -106,5 +115,4 @@ public class NodeAgent extends Thread{
         System.out.println("Sending Connection request to client.");
         sendData(request);
     }
-
 }

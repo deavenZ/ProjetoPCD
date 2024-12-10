@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Node {
 
@@ -19,11 +20,11 @@ public class Node {
     private List<File> fileList = new ArrayList<>();
     private List<Integer> connectedPorts = new ArrayList<>();
     private List<NodeAgent> nodeAgents = new ArrayList<>();
-    private DownloadTasksManager downloadManager;
     private GUI gui;
     private String folderName;
 
     private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
+    private Map<Integer, DownloadTasksManager> activeDownloads = new ConcurrentHashMap<>();
 
 
     public Node(int port, String folderName) {
@@ -80,12 +81,23 @@ public class Node {
         }
     }
 
-    public void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
+    public synchronized void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
         searchedFiles.clear();
         for (FileSearchResult wantedFile : wantedFiles) {
             searchedFiles.merge(wantedFile, 1, Integer::sum);
         }
         gui.setSearchedFiles(searchedFiles);
+    }
+
+    public DownloadTasksManager getOrCreateDTM(int fileHash) {
+        return activeDownloads.computeIfAbsent(fileHash, f-> {
+            return new DownloadTasksManager(fileHash);
+        });
+    }
+
+    public void completeDownload(int fileHash) {
+        activeDownloads.remove(fileHash);
+        System.out.println("File: " + fileHash + " - Download Completed!");
     }
 
     private void createFileList() {
@@ -136,9 +148,5 @@ public class Node {
 
     public void addConnectedPort(int port) {
         connectedPorts.add(port);
-    }
-
-    public void clearFileList() {
-        fileList.clear();
     }
 }

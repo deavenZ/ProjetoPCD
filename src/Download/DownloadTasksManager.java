@@ -7,12 +7,11 @@ import java.util.List;
 
 public class DownloadTasksManager {
 
-    private static final int NUM_CHUNKS = 10024;
+    private List<FileBlockAnswerMessage> chunkList;
+    private int fileHash;
 
-    private List<FileBlockRequestMessage> chunkList;
-
-    public DownloadTasksManager(FileSearchResult fileSearchResult) {
-
+    public DownloadTasksManager(int fileHash) {
+        this.fileHash = fileHash;
     }
 
     public void downloadFile(File file) {

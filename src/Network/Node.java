@@ -24,6 +24,7 @@ public class Node {
     private String folderName;
 
     private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
+    private Map<FileSearchResult, NodeAgent> agentPerFile = new HashMap<>();
     private Map<Integer, DownloadTasksManager> activeDownloads = new ConcurrentHashMap<>();
 
 
@@ -81,10 +82,12 @@ public class Node {
         }
     }
 
-    public synchronized void updateSearchedFiles(List<FileSearchResult> wantedFiles) {
+    public synchronized void updateSearchedFiles(List<FileSearchResult> wantedFiles, NodeAgent agent) {
         searchedFiles.clear();
+        agentPerFile.clear();
         for (FileSearchResult wantedFile : wantedFiles) {
             searchedFiles.merge(wantedFile, 1, Integer::sum);
+            agentPerFile.put(wantedFile, agent);
         }
         gui.setSearchedFiles(searchedFiles);
     }
@@ -96,6 +99,21 @@ public class Node {
             }
         }
         return null;
+    }
+
+    public void sendToAgentFileRequest(FileSearchResult file) {
+        Map<FileSearchResult, NodeAgent> wantedAgents = new HashMap<>();
+        for(Map.Entry<FileSearchResult, NodeAgent> entry : agentPerFile.entrySet()) {
+            if(entry.getKey().equals(file)) {
+                wantedAgents.put(entry.getKey(), entry.getValue());
+            }
+        }
+        long sizeForEachAgent = file.getSize()/wantedAgents.size();
+        int offset = 0;
+        for(Map.Entry<FileSearchResult, NodeAgent> entry : wantedAgents.entrySet()) {
+            entry.getValue().sendFileRequest(entry.getKey(), offset, sizeForEachAgent);
+            offset += (int) sizeForEachAgent;
+        }
     }
 
     public DownloadTasksManager getOrCreateDTM(int fileHash, String fileName) {

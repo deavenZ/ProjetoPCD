@@ -68,7 +68,7 @@ public class GUI {
                     JOptionPane.showMessageDialog(frame, "Selecione um arquivo para download!");
                     return;
                 }
-
+                node.sendToAgentFileRequest(getSelectedFile(fileList.getSelectedValue()));
             }
         });
         JButton connectButton = new JButton("Ligar a Nó");
@@ -150,7 +150,12 @@ public class GUI {
         fileList.setModel(files);
     }
 
-    private void downloadSelectedFile() {
-        fileList.getSelectedValue();
+    private FileSearchResult getSelectedFile(String fileWanted) {
+        for(FileSearchResult file : fileInList) {
+            if(file.getFileName().equals(fileWanted)) {
+                return file;
+            }
+        }
+        return null;
     }
 }

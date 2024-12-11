@@ -43,6 +43,14 @@ public class FileSearchResult implements Serializable {
         return size;
     }
 
+    public int getHash() {
+        return hash;
+    }
+
+    public String getFileName() {
+        return toString();
+    }
+
     @Override
     public String toString() {
         String[] separatedFile = fileName.split("\\\\");

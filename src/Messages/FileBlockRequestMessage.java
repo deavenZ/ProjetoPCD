@@ -4,9 +4,9 @@ public class FileBlockRequestMessage {
 
     private int fileHash;
     private int offset;
-    private int size;
+    private long size;
 
-    public FileBlockRequestMessage(int fileHash, int offset, int size) {
+    public FileBlockRequestMessage(int fileHash, int offset, long size) {
         this.fileHash = fileHash;
         this.offset = offset;
         this.size = size;
@@ -16,7 +16,7 @@ public class FileBlockRequestMessage {
         return fileHash;
     }
 
-    public int getSize() {
+    public long getSize() {
         return size;
     }
 

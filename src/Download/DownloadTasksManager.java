@@ -9,6 +9,29 @@ import java.util.List;
 
 public class DownloadTasksManager {
 
+    private class DownloadTaskManagerDownloader extends Thread {
+
+        @Override
+        public void run() {
+            downloadChunks();
+        }
+
+        private void downloadChunks() {
+            while(!isComplete()) {
+                System.out.println("Downloading chunks...");
+            }
+            File outputFile = new File(targetFolder, fileName);
+            try (FileOutputStream fileHandler = new FileOutputStream(outputFile)) {
+                for (byte[] chunk : chunkList) {
+                    fileHandler.write(chunk);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("File downloaded successfully: " + outputFile.getAbsolutePath());
+        }
+    }
+
     private List<byte[]> chunkList;
     private int fileHash;
     private int totalChunks;
@@ -17,7 +40,6 @@ public class DownloadTasksManager {
 
     public DownloadTasksManager(int fileHash, String fileName, String targetFolder) {
         this.fileHash = fileHash;
-        this.totalChunks = totalChunks;
         this.fileName = fileName;
         this.targetFolder = targetFolder;
     }
@@ -32,19 +54,13 @@ public class DownloadTasksManager {
         return totalChunks == chunkList.size();
     }
 
-    public void downloadChunks() {
-        if (!isComplete()) {
-            System.out.println("File not fully downloaded!");
-            return;
-        }
-        File outputFile = new File(targetFolder, fileName);
-        try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            for (byte[] chunk : chunkList) {
-                fos.write(chunk);
-            }
-        } catch (IOException e) {
+    public void runDownloader() {
+        DownloadTaskManagerDownloader downloader = new DownloadTaskManagerDownloader();
+        downloader.start();
+        try {
+            downloader.join();
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("File downloaded successfully: " + outputFile.getAbsolutePath());
     }
 }

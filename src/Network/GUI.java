@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -135,10 +136,15 @@ public class GUI {
 
     public void setSearchedFiles(Map<FileSearchResult, Integer> searchedFiles) {
         DefaultListModel<String> files = new DefaultListModel<>();
+        List<String> filesString = new ArrayList<>();
         fileInList.clear();
         for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
-           files.addElement(entry.getKey() + " <" + entry.getValue() + ">");
-           fileInList.add(entry.getKey());
+            filesString.add(entry.getKey() + " <" + entry.getValue() + ">");
+            fileInList.add(entry.getKey());
+        }
+        filesString.sort(String.CASE_INSENSITIVE_ORDER);
+        for(String file : filesString) {
+            files.addElement(file);
         }
         fileList.setModel(files);
     }

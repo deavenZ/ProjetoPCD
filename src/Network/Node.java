@@ -24,8 +24,8 @@ public class Node {
     private List<File> fileList = new ArrayList<>();
     private List<Integer> connectedPorts = new ArrayList<>();
     private List<NodeAgent> nodeAgents = new ArrayList<>();
-    private List<DownloadTasksManager> activeDownloads = new ArrayList<>();
 
+    private Map<DownloadTasksManager, Integer> activeDownloads = new HashMap<>();
     private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
     private Map<FileSearchResult, NodeAgent> agentPerFile = new HashMap<>();
 
@@ -79,14 +79,14 @@ public class Node {
     }
 
     public void searchFiles(WordSearchMessage keywords) {
+        searchedFiles.clear();
+        agentPerFile.clear();
         for (NodeAgent na : nodeAgents) {
             na.sendData(keywords);
         }
     }
 
     public synchronized void updateSearchedFiles(List<FileSearchResult> wantedFiles, NodeAgent agent) {
-        searchedFiles.clear();
-        agentPerFile.clear();
         for (FileSearchResult wantedFile : wantedFiles) {
             searchedFiles.merge(wantedFile, 1, Integer::sum);
             agentPerFile.put(wantedFile, agent);
@@ -132,12 +132,20 @@ public class Node {
 
     private void createDTM(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> nodeAgents) {
         System.out.println("Creating DTM!");
-        activeDownloads.add(new DownloadTasksManager(fileRequests, nodeAgents, folderName));
+        activeDownloads.put(new DownloadTasksManager(fileRequests, nodeAgents, folderName, this), fileRequests.getFirst().getFileHash());
+    }
+
+    public void sendFileBlockAnswer(FileBlockAnswerMessage fileBlock, NodeAgent agent) {
+        for(Map.Entry<DownloadTasksManager, Integer> entry : activeDownloads.entrySet()) {
+            if(entry.getValue() == fileBlock.getFileHash()) {
+                entry.getKey().responseReceived(fileBlock, agent);
+            }
+        }
     }
 
     public void completeDownload(DownloadTasksManager dtm) {
         activeDownloads.remove(dtm);
-//        System.out.println("File: " + fileHash + " - Download Completed!");
+        System.out.println("File: " + " - Download Completed!");
     }
 
     private void createFileList() {

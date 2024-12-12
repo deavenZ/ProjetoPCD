@@ -68,18 +68,27 @@ public class DownloadTasksManager {
     private List<NodeAgent> unavailableAgents = new ArrayList<NodeAgent>();
     private String targetFolder;
     private List<byte[]> chunkList;
+    private Node node;
 
-    public DownloadTasksManager(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> availableAgents, String targetFolder) {
+    public DownloadTasksManager(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> availableAgents, String targetFolder, Node node) {
         this.targetFolder = targetFolder;
         this.fileRequests = fileRequests;
         this.blockAmount = fileRequests.size();
         this.availableAgents = availableAgents;
+        this.node = node;
         startDownload();
     }
 
     public synchronized void startDownload() {
+        System.out.println("Starting Download");
         DownloadTasksManagerHandler handler = new DownloadTasksManagerHandler();
         handler.start();
+        try {
+            handler.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        node.completeDownload(this);
     }
 
     public synchronized void responseReceived(FileBlockAnswerMessage fileData, NodeAgent na) {

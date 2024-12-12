@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class NodeAgent extends Thread{
@@ -60,9 +61,11 @@ public class NodeAgent extends Thread{
                         mainNode.updateSearchedFiles((List<FileSearchResult>) wantedFiles, this);
                     }
                     case FileBlockAnswerMessage download -> {
-
+                        System.out.println("Received " + download);
+                        mainNode.sendFileBlockAnswer(download, this);
                     }
                     case FileBlockRequestMessage upload -> {
+                        System.out.println("Received " + upload);
                         FileBlockAnswerMessage wantedChunk = getFileDataChunk(upload);
                         sendData(wantedChunk);
                     }
@@ -94,64 +97,6 @@ public class NodeAgent extends Thread{
             return new FileBlockAnswerMessage(fileHash, offset, bytesRead, chunk);
         } catch (IOException e) {
             throw new RuntimeException("Error reading file chunk: " + e.getMessage(), e);
-        }
-    }
-
-//    private List<FileBlockAnswerMessage> divideFileIntoChunks(FileBlockRequestMessage request) {
-//        List<FileBlockAnswerMessage> chunks = new ArrayList<>();
-//        File file = mainNode.getFileByHash(request.getFileHash()); // Retrieve the file using the file hash
-//
-//        if (file == null) {
-//            System.err.println("Requested file not found for hash: " + request.getFileHash());
-//            return chunks; // Return an empty list if the file doesn't exist
-//        }
-//
-//        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-//            int offset = request.getOffset();
-//            long size = request.getSize();
-//
-//            // Ensure the offset is within the file size
-//            if (offset >= file.length()) {
-//                System.err.println("Offset exceeds file size for hash: " + request.getFileHash());
-//                return chunks;
-//            }
-//
-//            // Ensure the requested size does not exceed the remaining file size
-//            int bytesToRead = (int) Math.min(size, file.length() - offset);
-//
-//            raf.seek(offset); // Move the file pointer to the requested offset
-//
-//            while (bytesToRead > 0) {
-//                int chunkSize = Math.min(SIZE, bytesToRead); // Use the fixed chunk size
-//                byte[] buffer = new byte[chunkSize];
-//                int bytesRead = raf.read(buffer);
-//
-//                if (bytesRead == -1) break; // End of file reached
-//
-//                chunks.add(new FileBlockAnswerMessage(
-//                        file.getName(),
-//                        offset,
-//                        request.getFileHash(),
-//                        Arrays.copyOf(buffer, bytesRead) // Adjust buffer size for the last chunk
-//                ));
-//
-//                offset += bytesRead; // Update the offset for the next chunk
-//                bytesToRead -= bytesRead; // Decrease the remaining bytes to read
-//            }
-//        } catch (IOException e) {
-//            System.err.println("Error reading file for hash " + request.getFileHash() + ": " + e.getMessage());
-//        }
-//
-//        return chunks;
-//    }
-
-    private void closeThreads(ObjectInputStream in, ObjectOutputStream out, Socket socket) {
-        try {
-            in.close();
-            out.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

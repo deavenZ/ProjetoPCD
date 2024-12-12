@@ -2,18 +2,18 @@ package Messages;
 
 import Network.NodeAgent;
 
-public class FileBlockAnswerMessage {
+import java.io.Serializable;
 
-    private String fileName;
+public class FileBlockAnswerMessage implements Serializable {
+
     private int offset;
-    private int size;
+    private int length;
     private int fileHash;
     private byte[] chunk;
 
-    public FileBlockAnswerMessage(String fileName, int offset, int fileHash, byte[] chunk) {
-        this.fileName = fileName;
+    public FileBlockAnswerMessage(int fileHash, int offset, int length, byte[] chunk) {
         this.offset = offset;
-        this.size = NodeAgent.SIZE;
+        this.length = length;
         this.fileHash = fileHash;
         this.chunk = chunk;
     }
@@ -22,8 +22,12 @@ public class FileBlockAnswerMessage {
         return fileHash;
     }
 
-    public String getFileName() {
-        return fileName;
+    public int getOffset() {
+        return offset;
+    }
+
+    public int getLength() {
+        return length;
     }
 
     public byte[] getChunk() {
@@ -32,7 +36,6 @@ public class FileBlockAnswerMessage {
 
     @Override
     public String toString() {
-        return "Sending FileBlock [offset=" + offset + ", size=" + size + ", fileHash=" + fileHash + "]";
+        return "Answering FileBlock [ fileHash= " + fileHash  + " | length= " + length + " | offset= " + offset + " ]";
     }
-
 }

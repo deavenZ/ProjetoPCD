@@ -1,23 +1,25 @@
 package Messages;
 
-public class FileBlockRequestMessage {
+import java.io.Serializable;
+
+public class FileBlockRequestMessage implements Serializable {
 
     private int fileHash;
     private int offset;
-    private long size;
+    private int length;
 
-    public FileBlockRequestMessage(int fileHash, int offset, long size) {
+    public FileBlockRequestMessage(int fileHash, int offset, int length) {
         this.fileHash = fileHash;
         this.offset = offset;
-        this.size = size;
+        this.length= length;
     }
 
     public int getFileHash() {
         return fileHash;
     }
 
-    public long getSize() {
-        return size;
+    public int getLength() {
+        return length;
     }
 
     public int getOffset() {
@@ -26,6 +28,6 @@ public class FileBlockRequestMessage {
 
     @Override
     public String toString() {
-        return "Requesting FileBlock [offset=" + offset + ", size=" + size + ", fileHash=" + fileHash + "]";
+        return "Requesting FileBlock [ fileHash= " + fileHash  + " | length= " + length + " | offset= " + offset + " ]";
     }
 }

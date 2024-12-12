@@ -15,17 +15,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Node {
 
+    public static final int SIZE = 10024;
+
     private InetAddress address;
     private int port;
+    private GUI gui;
+    private String folderName;
     private List<File> fileList = new ArrayList<>();
     private List<Integer> connectedPorts = new ArrayList<>();
     private List<NodeAgent> nodeAgents = new ArrayList<>();
-    private GUI gui;
-    private String folderName;
+    private List<DownloadTasksManager> activeDownloads = new ArrayList<>();
 
     private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
     private Map<FileSearchResult, NodeAgent> agentPerFile = new HashMap<>();
-    private Map<Integer, DownloadTasksManager> activeDownloads = new ConcurrentHashMap<>();
 
 
     public Node(int port, String folderName) {
@@ -101,30 +103,41 @@ public class Node {
         return null;
     }
 
-    public void sendToAgentFileRequest(FileSearchResult file) {
-        Map<FileSearchResult, NodeAgent> wantedAgents = new HashMap<>();
+    public List<NodeAgent> getWantedAgents(FileSearchResult file) {
+        List<NodeAgent> wantedAgents = new ArrayList<>();
         for(Map.Entry<FileSearchResult, NodeAgent> entry : agentPerFile.entrySet()) {
             if(entry.getKey().equals(file)) {
-                wantedAgents.put(entry.getKey(), entry.getValue());
+                wantedAgents.add(entry.getValue());
             }
         }
-        long sizeForEachAgent = file.getSize()/wantedAgents.size();
+        return wantedAgents;
+    }
+
+    public void seperateFileInBlocks(FileSearchResult file) {
+        System.out.println("Divinding File in Chunks");
+        List<FileBlockRequestMessage> fileRequests = new ArrayList<>();
+        long size = file.getSize();
         int offset = 0;
-        for(Map.Entry<FileSearchResult, NodeAgent> entry : wantedAgents.entrySet()) {
-            entry.getValue().sendFileRequest(entry.getKey(), offset, sizeForEachAgent);
-            offset += (int) sizeForEachAgent;
+        while(size > SIZE) {
+            FileBlockRequestMessage fileBlockRequest = new FileBlockRequestMessage(file.getHash(), offset, SIZE);
+            fileRequests.add(fileBlockRequest);
+            offset += SIZE;
+            size -= SIZE;
         }
+        FileBlockRequestMessage fileBlockRequest = new FileBlockRequestMessage(file.getHash(), offset, (int) size);
+        fileRequests.add(fileBlockRequest);
+        List<NodeAgent> wantedAgents = getWantedAgents(file);
+        createDTM(fileRequests, wantedAgents);
     }
 
-    public DownloadTasksManager getOrCreateDTM(int fileHash, String fileName) {
-        return activeDownloads.computeIfAbsent(fileHash, f-> {
-            return new DownloadTasksManager(fileHash, fileName, folderName);
-        });
+    private void createDTM(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> nodeAgents) {
+        System.out.println("Creating DTM!");
+        activeDownloads.add(new DownloadTasksManager(fileRequests, nodeAgents, folderName));
     }
 
-    public void completeDownload(int fileHash) {
-        activeDownloads.remove(fileHash);
-        System.out.println("File: " + fileHash + " - Download Completed!");
+    public void completeDownload(DownloadTasksManager dtm) {
+        activeDownloads.remove(dtm);
+//        System.out.println("File: " + fileHash + " - Download Completed!");
     }
 
     private void createFileList() {

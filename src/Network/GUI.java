@@ -60,15 +60,7 @@ public class GUI {
         JButton downloadButton = new JButton("Download");
         downloadButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(fileList.getModel().getSize() == 0) {
-                    JOptionPane.showMessageDialog(frame, "Não tem nenhum arquivo para fazer download!");
-                    return;
-                }
-                if(fileList.getSelectedValue() == null) {
-                    JOptionPane.showMessageDialog(frame, "Selecione um arquivo para download!");
-                    return;
-                }
-                node.sendToAgentFileRequest(getSelectedFile(fileList.getSelectedValue()));
+                node.seperateFileInBlocks(getSelectedFile(fileList.getSelectedValue()));
             }
         });
         JButton connectButton = new JButton("Ligar a Nó");
@@ -143,6 +135,7 @@ public class GUI {
 
     public void setSearchedFiles(Map<FileSearchResult, Integer> searchedFiles) {
         DefaultListModel<String> files = new DefaultListModel<>();
+        fileInList.clear();
         for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
            files.addElement(entry.getKey() + " <" + entry.getValue() + ">");
            fileInList.add(entry.getKey());
@@ -151,8 +144,11 @@ public class GUI {
     }
 
     private FileSearchResult getSelectedFile(String fileWanted) {
+        System.out.println("Wanted File: " + fileWanted.split(" ")[0]);
         for(FileSearchResult file : fileInList) {
-            if(file.getFileName().equals(fileWanted)) {
+            System.out.println("Searching... FILE: " + file);
+            if(file.getFileName().equals(fileWanted.split(" ")[0])) {
+                System.out.println("Found File: " + file);
                 return file;
             }
         }

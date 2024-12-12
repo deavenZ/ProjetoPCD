@@ -1,66 +1,92 @@
 package Download;
 
 import Messages.FileBlockAnswerMessage;
+import Messages.FileBlockRequestMessage;
+import Network.Node;
+import Network.NodeAgent;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class DownloadTasksManager {
 
-    private class DownloadTaskManagerDownloader extends Thread {
+    private class DownloadTasksManagerHandler extends Thread {
 
         @Override
         public void run() {
-            downloadChunks();
-        }
-
-        private void downloadChunks() {
-            while(!isComplete()) {
-                System.out.println("Downloading chunks...");
+            while (!fileRequests.isEmpty()) {
+                NodeAgent na;
+                synchronized (DownloadTasksManager.this) {
+                    while (availableAgents.isEmpty()) {
+                        System.out.println("Waiting for an agent to be available");
+                        try {
+                            DownloadTasksManager.this.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    na = availableAgents.removeFirst();
+                    unavailableAgents.add(na);
+                }
+                na.sendData(fileRequests.removeFirst());
+                synchronized (DownloadTasksManager.this) {
+                    try {
+                        DownloadTasksManager.this.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
-            File outputFile = new File(targetFolder, fileName);
-            try (FileOutputStream fileHandler = new FileOutputStream(outputFile)) {
-                for (byte[] chunk : chunkList) {
-                    fileHandler.write(chunk);
+            if(fileContent.size() >= blockAmount) {
+                FileWriter.writeFile(targetFolder, fileContent);
+            }
+        }
+    }
+
+    private class FileWriter {
+
+        private static void writeFile(String targetFolder, List<FileBlockAnswerMessage> fileContent) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(targetFolder)) {
+                fileContent.sort(Comparator.comparingInt(FileBlockAnswerMessage::getOffset));
+                for (FileBlockAnswerMessage block : fileContent) {
+                    fileOutputStream.write(block.getChunk());
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
-            System.out.println("File downloaded successfully: " + outputFile.getAbsolutePath());
         }
     }
 
-    private List<byte[]> chunkList;
-    private int fileHash;
-    private int totalChunks;
-    private String fileName;
+    private List<FileBlockRequestMessage> fileRequests;
+    private int blockAmount;
+    private List<FileBlockAnswerMessage> fileContent = new ArrayList<>();
+    private List<NodeAgent> availableAgents;
+    private List<NodeAgent> unavailableAgents = new ArrayList<NodeAgent>();
     private String targetFolder;
+    private List<byte[]> chunkList;
 
-    public DownloadTasksManager(int fileHash, String fileName, String targetFolder) {
-        this.fileHash = fileHash;
-        this.fileName = fileName;
+    public DownloadTasksManager(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> availableAgents, String targetFolder) {
         this.targetFolder = targetFolder;
+        this.fileRequests = fileRequests;
+        this.blockAmount = fileRequests.size();
+        this.availableAgents = availableAgents;
+        startDownload();
     }
 
-    public synchronized void saveChunk(FileBlockAnswerMessage chunk) {
-        totalChunks++;
-        chunkList.add(chunk.getChunk());
-        System.out.println("Chunk received for file: " + fileName + " | Total received: " + totalChunks);
+    public synchronized void startDownload() {
+        DownloadTasksManagerHandler handler = new DownloadTasksManagerHandler();
+        handler.start();
     }
 
-    public synchronized boolean isComplete() {
-        return totalChunks == chunkList.size();
-    }
-
-    public void runDownloader() {
-        DownloadTaskManagerDownloader downloader = new DownloadTaskManagerDownloader();
-        downloader.start();
-        try {
-            downloader.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public synchronized void responseReceived(FileBlockAnswerMessage fileData, NodeAgent na) {
+        fileContent.add(fileData);
+        System.out.println(fileData);
+        unavailableAgents.remove(na);
+        availableAgents.add(na);
+        notifyAll();
     }
 }

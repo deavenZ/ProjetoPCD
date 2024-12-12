@@ -16,7 +16,6 @@ import java.util.List;
 
 public class NodeAgent extends Thread{
 
-    public static final int SIZE = 1024;
     public static final int TIMEOUT = 300;
 
     private ObjectInputStream in;
@@ -41,7 +40,7 @@ public class NodeAgent extends Thread{
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized void serve() throws IOException {
+    private void serve() throws IOException {
         try {
             in = new ObjectInputStream(socket.getInputStream());
             while (true) {
@@ -60,31 +59,41 @@ public class NodeAgent extends Thread{
                     case List<?> wantedFiles -> {
                         mainNode.updateSearchedFiles((List<FileSearchResult>) wantedFiles, this);
                     }
-//                    case FileBlockAnswerMessage download -> {
-//                        DownloadTasksManager dtm = mainNode.getOrCreateDTM(download.getFileHash(), download.getFileName());
-//                        System.out.println("Receiving file chunk: " + download);
-//                        dtm.saveChunk(download);
-//                        if(dtm.isComplete()) {
-//                            dtm.runDownloader();
-//                            mainNode.completeDownload(download.getFileHash());
-//                        }
-//                    }
-//                    case FileBlockRequestMessage upload -> {
-//                        List<FileBlockAnswerMessage> wantedChunks = divideFileIntoChunks(upload);
-//                        for(FileBlockAnswerMessage wantedChunk : wantedChunks) {
-//                            sendData(wantedChunk);
-//                            try {
-//                                wait(TIMEOUT);
-//                            } catch (InterruptedException e) {
-//                                throw new RuntimeException(e);
-//                            }
-//                        }
-//                    }
+                    case FileBlockAnswerMessage download -> {
+
+                    }
+                    case FileBlockRequestMessage upload -> {
+                        FileBlockAnswerMessage wantedChunk = getFileDataChunk(upload);
+                        sendData(wantedChunk);
+                    }
                     default -> throw new IllegalStateException("Unexpected value: " + message);
                 }
             }
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private FileBlockAnswerMessage getFileDataChunk(FileBlockRequestMessage request) {
+        int offset = request.getOffset();
+        int length = request.getLength();
+        int fileHash = request.getFileHash();
+        File file = mainNode.getFileByHash(fileHash);
+        if(file == null) {
+            System.err.println("File not found: " + request.getFileHash());
+            return null;
+        }
+        try (RandomAccessFile fileAccess = new RandomAccessFile(file, "r")) {
+            fileAccess.seek(offset);
+            byte[] chunk = new byte[length];
+            int bytesRead = fileAccess.read(chunk);
+
+            if (bytesRead < length) {
+                chunk = java.util.Arrays.copyOf(chunk, bytesRead);
+            }
+            return new FileBlockAnswerMessage(fileHash, offset, bytesRead, chunk);
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading file chunk: " + e.getMessage(), e);
         }
     }
 

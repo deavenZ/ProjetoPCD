@@ -1,8 +1,3 @@
-package Network;
-
-import Messages.FileSearchResult;
-import Messages.WordSearchMessage;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -10,17 +5,16 @@ import java.awt.event.ActionListener;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 public class GUI {
 
-    private Network.Node node;
+    private Node node;
     private JList<String> fileList = new JList<>();
     private List<FileSearchResult> fileInList = new ArrayList<>();
 
-    public GUI(Network.Node node) {
+    public GUI(Node node) {
         this.node = node;
         node.setGui(this);
         setup();
@@ -61,7 +55,9 @@ public class GUI {
         JButton downloadButton = new JButton("Download");
         downloadButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                node.seperateFileInBlocks(getSelectedFile(fileList.getSelectedValue()));
+                for(String selectedFile : fileList.getSelectedValuesList()) {
+                    node.seperateFileInBlocks(getSelectedFile(selectedFile));
+                }
             }
         });
         JButton connectButton = new JButton("Ligar a Nó");

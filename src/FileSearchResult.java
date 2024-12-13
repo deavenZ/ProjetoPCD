@@ -1,5 +1,3 @@
-package Messages;
-
 import java.io.File;
 import java.io.Serializable;
 import java.math.BigInteger;

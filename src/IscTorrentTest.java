@@ -1,5 +1,3 @@
-package Runnable;
-
 public class IscTorrentTest {
 
     public static void main(String[] args) {

@@ -1,10 +1,3 @@
-package Download;
-
-import Messages.FileBlockAnswerMessage;
-import Messages.FileBlockRequestMessage;
-import Network.Node;
-import Network.NodeAgent;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,15 +12,10 @@ public class DownloadTasksManager {
 
     private class DownloadTasksManagerHandler extends Thread {
 
-        private NodeAgent na;
-
-        public DownloadTasksManagerHandler(NodeAgent nodeAgent) {
-            na = nodeAgent;
-        }
-
         @Override
         public void run() {
             while (!fileRequests.isEmpty()) {
+                NodeAgent na;
                 synchronized (DownloadTasksManager.this) {
                     while (availableAgents.isEmpty()) {
                         System.out.println("Waiting for an agent to be available");
@@ -96,9 +84,7 @@ public class DownloadTasksManager {
 
     public synchronized void startDownload() {
         System.out.println("Starting Download");
-        for (NodeAgent na : availableAgents) {
-            executorService.submit(new DownloadTasksManagerHandler(na));
-        }
+        executorService.submit(new DownloadTasksManagerHandler());
     }
 
     public synchronized void responseReceived(FileBlockAnswerMessage fileData, NodeAgent na) {

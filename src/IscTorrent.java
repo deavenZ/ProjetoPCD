@@ -1,13 +1,8 @@
-package Runnable;
-
-import Network.GUI;
-import Network.Node;
-
 import java.io.File;
 
 public class IscTorrent {
 
-    public static final String PATH = new File((System.getProperty("user.dir")))+ "\\";
+    public static final String PATH = new File((System.getProperty("user.dir"))).getParent()+ "\\";
 
     public static void main(String[] args) {
         int port = Integer.parseInt(args[0]);

@@ -1,18 +1,7 @@
-package Network;
-
-import Download.DownloadTasksManager;
-import Messages.FileBlockAnswerMessage;
-import Messages.FileBlockRequestMessage;
-import Messages.FileSearchResult;
-import Messages.NewConnectionRequest;
-import Messages.WordSearchMessage;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 public class NodeAgent extends Thread{

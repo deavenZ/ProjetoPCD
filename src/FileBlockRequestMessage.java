@@ -1,5 +1,3 @@
-package Messages;
-
 import java.io.Serializable;
 
 public class FileBlockRequestMessage implements Serializable {

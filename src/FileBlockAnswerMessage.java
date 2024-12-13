@@ -1,7 +1,3 @@
-package Messages;
-
-import Network.NodeAgent;
-
 import java.io.Serializable;
 
 public class FileBlockAnswerMessage implements Serializable {

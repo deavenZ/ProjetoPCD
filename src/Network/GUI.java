@@ -126,6 +126,30 @@ public class GUI {
         frame.setVisible(true);
     }
 
+    public void downloadComplete(Map<NodeAgent, Integer> blocksPerAgents, long elapsedTime) {
+        JFrame frame = new JFrame("Download Complete");
+        frame.setPreferredSize(new Dimension(600, 200));
+        frame.setLayout(new BorderLayout());
+        JLabel label = new JLabel("<html><br> Descarregamento Completo <br>");
+        for(Map.Entry<NodeAgent, Integer> entry : blocksPerAgents.entrySet()) {
+            String textWanted = "Fornecedor[endereco=/" + entry.getKey().getClientAddress().getHostName() + ", porto=" + entry.getKey().getClientPort() + "]:" + entry.getValue();
+            label.setText(label.getText() + textWanted + "<br>");
+        }
+        double elapsedTimeSeconds = (double) ((int) (elapsedTime / 100))/10;
+        label.setText(label.getText() + "<br> Tempo decorrido: " + elapsedTimeSeconds + " s<br></html>");
+        frame.add(label, BorderLayout.CENTER);
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                frame.dispose();
+            }
+        });
+        frame.add(okButton, BorderLayout.SOUTH);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
     private void connectClient(String address, int port) {
         try {
             node.connectClient(InetAddress.getByName(address), port);
@@ -139,7 +163,7 @@ public class GUI {
         List<String> filesString = new ArrayList<>();
         fileInList.clear();
         for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
-            filesString.add(entry.getKey() + " <" + entry.getValue() + ">");
+            filesString.add(entry.getKey().getFileName() + " <" + entry.getValue() + ">");
             fileInList.add(entry.getKey());
         }
         filesString.sort(String.CASE_INSENSITIVE_ORDER);

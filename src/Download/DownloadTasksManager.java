@@ -8,18 +8,26 @@ import Network.NodeAgent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class DownloadTasksManager {
 
+    private static final int MAX_THREADS = 5;
+    private final ExecutorService executorService;
+
     private class DownloadTasksManagerHandler extends Thread {
+
+        private NodeAgent na;
+
+        public DownloadTasksManagerHandler(NodeAgent nodeAgent) {
+            na = nodeAgent;
+        }
 
         @Override
         public void run() {
             while (!fileRequests.isEmpty()) {
-                NodeAgent na;
                 synchronized (DownloadTasksManager.this) {
                     while (availableAgents.isEmpty()) {
                         System.out.println("Waiting for an agent to be available");
@@ -42,15 +50,16 @@ public class DownloadTasksManager {
                 }
             }
             if(fileContent.size() >= blockAmount) {
-                FileWriter.writeFile(targetFolder, fileContent);
+                FileWriter.writeFile(targetFolder, fileName, fileContent);
             }
+            completeDownload();
         }
     }
 
-    private class FileWriter {
+    private static class FileWriter {
 
-        private static void writeFile(String targetFolder, List<FileBlockAnswerMessage> fileContent) {
-            try (FileOutputStream fileOutputStream = new FileOutputStream(targetFolder)) {
+        private static void writeFile(String targetFolder, String fileName, List<FileBlockAnswerMessage> fileContent) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(targetFolder + File.separator + fileName);) {
                 fileContent.sort(Comparator.comparingInt(FileBlockAnswerMessage::getOffset));
                 for (FileBlockAnswerMessage block : fileContent) {
                     fileOutputStream.write(block.getChunk());
@@ -66,29 +75,30 @@ public class DownloadTasksManager {
     private List<FileBlockAnswerMessage> fileContent = new ArrayList<>();
     private List<NodeAgent> availableAgents;
     private List<NodeAgent> unavailableAgents = new ArrayList<NodeAgent>();
+    private Map<NodeAgent, Integer> blocksPerAgent = new HashMap<>();
     private String targetFolder;
-    private List<byte[]> chunkList;
+    private String fileName;
     private Node node;
+    private long startTime;
 
-    public DownloadTasksManager(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> availableAgents, String targetFolder, Node node) {
+    public DownloadTasksManager(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> availableAgents, String targetFolder, String fileName, Node node) {
         this.targetFolder = targetFolder;
         this.fileRequests = fileRequests;
         this.blockAmount = fileRequests.size();
         this.availableAgents = availableAgents;
+        this.fileName = fileName;
         this.node = node;
+        this.startTime = System.currentTimeMillis();
+        initialiteBlocksPerAgent(availableAgents);
+        this.executorService = Executors.newFixedThreadPool(MAX_THREADS);
         startDownload();
     }
 
     public synchronized void startDownload() {
         System.out.println("Starting Download");
-        DownloadTasksManagerHandler handler = new DownloadTasksManagerHandler();
-        handler.start();
-        try {
-            handler.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        for (NodeAgent na : availableAgents) {
+            executorService.submit(new DownloadTasksManagerHandler(na));
         }
-        node.completeDownload(this);
     }
 
     public synchronized void responseReceived(FileBlockAnswerMessage fileData, NodeAgent na) {
@@ -96,6 +106,25 @@ public class DownloadTasksManager {
         System.out.println(fileData);
         unavailableAgents.remove(na);
         availableAgents.add(na);
+        addBlockToAgent(na);
         notifyAll();
+    }
+
+    private void completeDownload() {
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+        System.out.println("Completed Download in " + elapsedTime + " ms");
+        executorService.shutdown();
+        node.completeDownload(this, blocksPerAgent, elapsedTime);
+    }
+
+    private void initialiteBlocksPerAgent(List<NodeAgent> availableAgents) {
+        for(NodeAgent agent : availableAgents) {
+            blocksPerAgent.put(agent, 0);
+        }
+    }
+
+    private void addBlockToAgent(NodeAgent agent) {
+        blocksPerAgent.put(agent, blocksPerAgent.get(agent) + 1);
     }
 }

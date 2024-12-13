@@ -6,7 +6,10 @@ import Runnable.IscTorrent;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.*;
+import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +29,7 @@ public class Node {
     private List<NodeAgent> nodeAgents = new ArrayList<>();
 
     private Map<DownloadTasksManager, Integer> activeDownloads = new HashMap<>();
-    private Map<FileSearchResult, Integer> searchedFiles = new HashMap<>();
+    private ConcurrentHashMap<FileSearchResult, Integer> searchedFiles = new ConcurrentHashMap<>();
     private Map<FileSearchResult, NodeAgent> agentPerFile = new HashMap<>();
 
 
@@ -68,7 +71,7 @@ public class Node {
         try {
             socket = new Socket(address, port);
             System.out.println("Starting agent for port: " + socket.getPort());
-            NodeAgent na = new NodeAgent(this, socket);
+            NodeAgent na = new NodeAgent(this, socket, address, port);
             na.start();
             na.sendConnectionRequest(new NewConnectionRequest(this.address.getHostAddress(), this.port));
             addConnectedPort(socket.getPort());
@@ -87,20 +90,45 @@ public class Node {
     }
 
     public synchronized void updateSearchedFiles(List<FileSearchResult> wantedFiles, NodeAgent agent) {
+        List<FileSearchResult> alreadyIncrementedFiles = new ArrayList<>();
         for (FileSearchResult wantedFile : wantedFiles) {
-            searchedFiles.merge(wantedFile, 1, Integer::sum);
-            agentPerFile.put(wantedFile, agent);
+            for(Map.Entry<FileSearchResult, Integer> entry : searchedFiles.entrySet()) {
+                FileSearchResult result = entry.getKey();
+                if(result.getHash() == wantedFile.getHash()) {
+                    System.out.println("Incremented searched file: " + wantedFile);
+                    alreadyIncrementedFiles.add(wantedFile);
+                    int temp = searchedFiles.remove(result);
+                    searchedFiles.put(result, temp + 1);
+                    agentPerFile.put(wantedFile, agent);
+                }
+            }
+            if(!alreadyIncrementedFiles.contains(wantedFile)) {
+                System.out.println("Added searched file: " + wantedFile);
+                searchedFiles.put(wantedFile, 1);
+                agentPerFile.put(wantedFile, agent);
+            }
         }
         gui.setSearchedFiles(searchedFiles);
     }
 
     public File getFileByHash(int hash) {
         for (File file : fileList) {
-            if (file.hashCode() == hash) {
+            int filesHashCode = getFilesHashCode(file);
+            if (filesHashCode == hash) {
                 return file;
             }
         }
         return null;
+    }
+
+    private int getFilesHashCode(File file) {
+        try {
+            byte[] fileContent = Files.readAllBytes(file.toPath());
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(fileContent);
+            return new BigInteger(1, hash).intValue();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<NodeAgent> getWantedAgents(FileSearchResult file) {
@@ -127,12 +155,12 @@ public class Node {
         FileBlockRequestMessage fileBlockRequest = new FileBlockRequestMessage(file.getHash(), offset, (int) size);
         fileRequests.add(fileBlockRequest);
         List<NodeAgent> wantedAgents = getWantedAgents(file);
-        createDTM(fileRequests, wantedAgents);
+        createDTM(fileRequests, wantedAgents, file.getFileName());
     }
 
-    private void createDTM(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> nodeAgents) {
+    private void createDTM(List<FileBlockRequestMessage> fileRequests, List<NodeAgent> nodeAgents, String fileName) {
         System.out.println("Creating DTM!");
-        activeDownloads.put(new DownloadTasksManager(fileRequests, nodeAgents, folderName, this), fileRequests.getFirst().getFileHash());
+        activeDownloads.put(new DownloadTasksManager(fileRequests, nodeAgents, folderName, fileName, this), fileRequests.getFirst().getFileHash());
     }
 
     public void sendFileBlockAnswer(FileBlockAnswerMessage fileBlock, NodeAgent agent) {
@@ -143,9 +171,11 @@ public class Node {
         }
     }
 
-    public void completeDownload(DownloadTasksManager dtm) {
+    public void completeDownload(DownloadTasksManager dtm, Map<NodeAgent, Integer> blocksPerAgents, long elapsedTime) {
         activeDownloads.remove(dtm);
+        updateFileList();
         System.out.println("File: " + " - Download Completed!");
+        gui.downloadComplete(blocksPerAgents, elapsedTime);
     }
 
     private void createFileList() {
@@ -156,6 +186,21 @@ public class Node {
                 if (file.getName().endsWith("mp3")) {
                     System.out.println("Adding file: " + file.getName());
                     addFile(file);
+                }
+            }
+        }
+    }
+
+    private void updateFileList() {
+        System.out.println("Updating file list: " + folderName);
+        File[] files = new File(folderName).listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if(!fileList.contains(file)) {
+                    if (file.getName().endsWith("mp3")) {
+                        System.out.println("Adding file: " + file.getName());
+                        addFile(file);
+                    }
                 }
             }
         }

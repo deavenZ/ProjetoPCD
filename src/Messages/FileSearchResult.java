@@ -25,15 +25,15 @@ public class FileSearchResult implements Serializable {
         this.porta = porta;
     }
 
-    private int digestFile(File file) {
-        try {
-            byte[] fileContent = Files.readAllBytes(file.toPath());
-            byte[] hash = MessageDigest.getInstance("SHA-256").digest(fileContent);
-            return new BigInteger(1, hash).intValue();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        private int digestFile(File file) {
+            try {
+                byte[] fileContent = Files.readAllBytes(file.toPath());
+                byte[] hash = MessageDigest.getInstance("SHA-256").digest(fileContent);
+                return new BigInteger(1, hash).intValue();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
-    }
 
     public String getFilePath() {
         return fileName;
@@ -48,13 +48,14 @@ public class FileSearchResult implements Serializable {
     }
 
     public String getFileName() {
-        return toString();
+        String[] separatedFile = fileName.split("\\\\");
+        return separatedFile[separatedFile.length - 1];
     }
 
     @Override
     public String toString() {
         String[] separatedFile = fileName.split("\\\\");
-        return separatedFile[separatedFile.length - 1] + hash;
+        return separatedFile[separatedFile.length - 1] + " " + hash;
     }
 
     @Override

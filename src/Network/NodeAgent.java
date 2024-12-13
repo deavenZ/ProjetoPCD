@@ -32,6 +32,14 @@ public class NodeAgent extends Thread{
         out = new ObjectOutputStream(socket.getOutputStream());
     }
 
+    public NodeAgent(Node node, Socket socket, InetAddress clientAddress, int clientPort) throws IOException {
+        this.mainNode = node;
+        this.socket = socket;
+        this.clientAddress = clientAddress;
+        this.clientPort = clientPort;
+        out = new ObjectOutputStream(socket.getOutputStream());
+    }
+
     public void run() {
         try {
             serve();
@@ -133,7 +141,12 @@ public class NodeAgent extends Thread{
         sendData(request);
     }
 
-//    public void sendFileRequest(FileSearchResult file, int offset, long size) {
-//        sendData(new FileBlockRequestMessage(file.getHash(), offset, size));
-//    }
+    public InetAddress getClientAddress() {
+        return clientAddress;
+    }
+
+    public int getClientPort() {
+        return clientPort;
+    }
+
 }
